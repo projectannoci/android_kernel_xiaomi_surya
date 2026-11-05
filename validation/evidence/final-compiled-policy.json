@@ -1,0 +1,8 @@
+{
+  "original_gpu_provider_table": true,
+  "forced_GPU_OC_absent": true,
+  "default_USB_current_override_off": true,
+  "APSD_error_return_compiled": true,
+  "charger_deferred_probe_compiled": true,
+  "hardware_UI_and_offcharge": "unverified"
+}

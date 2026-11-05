@@ -1,0 +1,8 @@
+{
+  "ZIP": "Singularity_v1_ProjectNoci_surya_R5_NoRoot_Diagnostic.zip",
+  "bytes": 16543632,
+  "sha256": "873909c3dc37085450debe84d09b58301ea17c0889426052655b4d58357fbd7d",
+  "CRC_manifest_permissions_paths": true,
+  "kernel_only_no_ROM_payloads": true,
+  "root": "absent; diagnostic only"
+}

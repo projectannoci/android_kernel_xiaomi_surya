@@ -1,0 +1,99 @@
+--- a/drivers/power/supply/qcom/smb5-lib.c
++++ b/drivers/power/supply/qcom/smb5-lib.c
+@@ -1246,7 +1246,7 @@
+ 	return rc;
+ }
+ 
+-void smblib_rerun_apsd(struct smb_charger *chg)
++int smblib_rerun_apsd(struct smb_charger *chg)
+ {
+ 	int rc;
+ 
+@@ -1256,6 +1256,8 @@
+ 				APSD_RERUN_BIT, APSD_RERUN_BIT);
+ 	if (rc < 0)
+ 		smblib_err(chg, "Couldn't re-run APSD rc=%d\n", rc);
++
++	return rc;
+ }
+ 
+ static const struct apsd_result *smblib_update_usb_type(struct smb_charger *chg)
+@@ -1514,11 +1516,16 @@
+ 		return 0;
+ 
+ 	rc = smblib_request_dpdm(chg, true);
++	if (rc < 0) {
++		smblib_err(chg, "Couldn't to enable DPDM rc=%d\n", rc);
++		return rc;
++	}
++
++	rc = smblib_rerun_apsd(chg);
+ 	if (rc < 0)
+-		smblib_err(chg, "Couldn't to enable DPDM rc=%d\n", rc);
++		return rc;
+ 
+ 	chg->uusb_apsd_rerun_done = true;
+-	smblib_rerun_apsd(chg);
+ 
+ 	return 0;
+ }
+--- a/drivers/power/supply/qcom/smb5-lib.h
++++ b/drivers/power/supply/qcom/smb5-lib.h
+@@ -990,7 +990,7 @@
+ 				const union power_supply_propval *val);
+ void smblib_suspend_on_debug_battery(struct smb_charger *chg);
+ int smblib_rerun_apsd_if_required(struct smb_charger *chg);
+-void smblib_rerun_apsd(struct smb_charger *chg);
++int smblib_rerun_apsd(struct smb_charger *chg);
+ int smblib_get_prop_fcc_delta(struct smb_charger *chg,
+ 				union power_supply_propval *val);
+ int smblib_get_thermal_threshold(struct smb_charger *chg, u16 addr, int *val);
+--- a/drivers/power/supply/qcom/qpnp-smb5.c
++++ b/drivers/power/supply/qcom/qpnp-smb5.c
+@@ -3089,7 +3089,12 @@
+ 		schgm_flash_init(chg);
+ 	}
+ 
+-	smblib_rerun_apsd_if_required(chg);
++	/* Retry cold-boot detection after the DPDM provider is ready. */
++	rc = smblib_rerun_apsd_if_required(chg);
++	if (rc == -EPROBE_DEFER)
++		return rc;
++	if (rc < 0)
++		dev_warn(chg->dev, "Initial APSD retry failed rc=%d\n", rc);
+ 
+ 	/* Use ICL results from HW */
+ 	rc = smblib_icl_override(chg, HW_AUTO_MODE);
+--- a/drivers/misc/fastchg.c
++++ b/drivers/misc/fastchg.c
+@@ -27,7 +27,7 @@
+ #include <linux/string.h>
+ #include <linux/module.h>
+ 
+-int force_fast_charge = 1;
++int force_fast_charge = 0;
+ 
+ static int __init get_fastcharge_opt(char *ffc)
+ {
+--- a/scripts/mkcompile_h
++++ b/scripts/mkcompile_h
+@@ -75,8 +75,8 @@
+ 
+   echo \#define UTS_VERSION \"`echo $UTS_VERSION | $UTS_TRUNCATE`\"
+ 
+-  echo \#define LINUX_COMPILE_BY \"`echo rd | $UTS_TRUNCATE`\"
+-  echo \#define LINUX_COMPILE_HOST \"`echo Azure | $UTS_TRUNCATE`\"
++  echo \#define LINUX_COMPILE_BY \"`echo $LINUX_COMPILE_BY | $UTS_TRUNCATE`\"
++  echo \#define LINUX_COMPILE_HOST \"`echo $LINUX_COMPILE_HOST | $UTS_TRUNCATE`\"
+ 
+   CC_VERSION=$($CC -v 2>&1 | grep ' version ' | sed 's/[[:space:]]*$//')
+   LD_VERSION=$($LD -v | head -n1 | sed 's/(compatible with [^)]*)//' \
+--- a/arch/arm64/configs/singularity_defconfig
++++ b/arch/arm64/configs/singularity_defconfig
+@@ -1,5 +1,5 @@
+ CONFIG_TOOLS_SUPPORT_RELR=y
+-CONFIG_LOCALVERSION="-Singularity-v1-ProjectNoci-r5-ksun"
++CONFIG_LOCALVERSION="-Singularity-v1-ProjectNoci"
+ # CONFIG_FHANDLE is not set
+ CONFIG_NO_HZ=y
+ CONFIG_HIGH_RES_TIMERS=y

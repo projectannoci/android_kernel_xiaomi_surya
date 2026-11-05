@@ -1,0 +1,26 @@
+Singularity v1 @ProjectNoci #1 — corrected final
+
+Tester: previous #1 boots but freezes at password entry and shows a white
+screen; no off-mode charging reported. Exact device-side cause unavailable.
+
+Build: exit0, original pinned source/compiler, KSU manual API12797.
+Final effective config equals R5 apart from the clean kernel release name.
+ARM64 Image, embedded config and manual root object/link checks: passed.
+Original GPU bins/provider retained; forced OC code absent in compiled objects.
+CPU/GPU response restored to R5; callback/bounds/idle/policy tests passed.
+Charger DPDM -EPROBE_DEFER/error and APSD-write error cases failed before
+patching and pass with the actual helper/caller code after patching.
+Forced USB current override is compiled with default0.
+
+ZIP CRC, built-payload identity, manifest, executable modes and syntax passed.
+Original Topaz boot repack passed: exact final kernel; unchanged compressed
+ramdisk, DTB, DTBO, header and AVB metadata; resulting boot hash valid.
+Bad readback is rejected by the actual ARM installer in a fake-block fixture.
+The installer core is unchanged from the prior five-fixture validation.
+
+Corrected final phone UI, off-charge, root runtime and game stability: untested.
+Charging source error path is confirmed; whether it caused the reported
+off-charge symptom remains unconfirmed. No charging protections bypassed.
+Vendor module ABI: unknown without vendor module partitions.
+The raw Image build intentionally does not generate replacement DTBs.
+Warnings/nonfatal missing Git metadata messages are kept in build-final.log.

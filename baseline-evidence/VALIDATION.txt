@@ -1,0 +1,35 @@
+R5 — EXECUTED EVIDENCE / LIMITATIONS
+R4 tester result: stuck at POCO with original ROM boot and DTBO restored.
+Precise panic/root cause: UNKNOWN; phone pstore trace not supplied.
+R5 is a root/probe hypothesis test, not a verified phone-boot fix.
+
+KernelSU Next1.0.9 /API12797 build: exit0. Manual syscall/LSM hooks compiled.
+KPROBES and root probe backend absent from effective config and linked Image.
+Actual compiled exec/open/stat/read/input objects reference their manual root
+handlers; linked kernel includes those handlers and its root initcall.
+Compiled root IR includes API12797. Official Manager APK hash matches its
+release digest; its APKv2 certificate matches the compiled Manager policy.
+Native SELinux filename transition regression failed on upstream code and
+passes after compatibility patch. Native pointer-array representation is
+compiled against the real vendor policydb header; no layout/CRC bypass used.
+
+NoRoot diagnostic build: exit0. Root init and hook references absent in final
+linked kernel/objects. Effective config differs only in KSU and dependent flags.
+Both configs retain the same release suffix to avoid a vermagic confound.
+CPU/GPU tuning source is byte-identical to R4. Host callback tests pass, and
+ARM64 headers/effective embedded configs are checked for both outputs.
+
+Real ARM32 installer tools run under QEMU on fake regular-file blocks only.
+Main: current ROM input + synthetic variant pass preservation checks. Ramdisk
+(compressed and cpio), DTB/header exact; DTBO unchanged with no write intent.
+Helper failure, write failure and bad readback correctly abort installation.
+Diagnostic: same current-ROM preservation/repack checks pass.
+AOSP avbtool1.3.0 independently verifies both resulting boot hashes and metadata.
+ZIP CRC, manifest, payload identity, executable flags and paths verified.
+No full boot/ramdisk/DTB/DTBO payloads. No automatic uploads of recovery logs.
+Bootlog capture itself is best effort and has not been tested on the phone.
+
+Phone boot and root runtime: UNTESTED for R5/diagnostic. FPS/thermal: UNMEASURED.
+Vendor module ABI: UNKNOWN without vendor module partitions. Existing native
+MODVERSIONS and module signature policy retained. Source/header pairing is not
+proof of physical boot. Build warnings retained verbatim in build logs.

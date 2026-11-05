@@ -1,0 +1,101 @@
+{
+  "device": "surya",
+  "reference_boot_sha256": "4ccecb0f7a7ecd43b6595dddbe39c13c1577439afdc96b84dfb3291f45b4ca3a",
+  "reference_dtbo_sha256": "0665efc9f44209c132843eea8989ae7cc5e7d254ab34a1d98974b53b1ffb5508",
+  "reference_boot_kernel_banner": "4.14.190-perf-gf9fa6c63a429 / Snapdragon Clang 14.1.5",
+  "source_repo": "https://github.com/adithya2306/android_kernel_xiaomi_surya",
+  "source_commit": "f9fa6c63a4291960ac6ac87ad147a5e702acf2a0",
+  "toolchain_repo": "https://github.com/xiangfeidexiaohuo/Snapdragon-Clang",
+  "toolchain_commit": "699941635db14af1f87a7c6fa6134b5dc3dc79c4",
+  "compiler": "Snapdragon LLVM ARM Compiler 14.1.5",
+  "ramdisk": "lz4_legacy",
+  "boot_header": 2,
+  "page_size": 4096,
+  "boot_partition_bytes": 134217728,
+  "avb_algorithm": "NONE (0), embedded boot hash",
+  "abi_vendor_partition_available": false,
+  "physical_boot": "Previous #1 boots but tester reports freeze at password entry and white screen; corrected final not device-tested",
+  "fps": "unmeasured",
+  "source_pairing": "Kernel SHA matches ROM boot banner; shipped source perf_defconfig used. Embedded ROM config is a stock snapshot forced by original kernel/Makefile, so is not treated as its actual config.",
+  "root_repo": "https://github.com/KernelSU-Next/KernelSU-Next",
+  "root_tag": "v1.0.9",
+  "root_commit": "2241696498ce9dd742ce80b52c3ed6cca26e03ea",
+  "root_version": 12797,
+  "root_mode": "manual hooks plus native LSM, KSU_KPROBES_HOOK=n and KPROBES=n",
+  "confirmed_panic_trace_available": false,
+  "performance_policy": "Restore R5 CPU headroom (big +12.5% capacity at >=50% utilization, LITTLE +6.25% at >=75%); retain 500us/20ms schedutil; restore 2ms/1000us AdrenoTZ sample and 90/75/60 thresholds",
+  "diagnostic": "same source/compiler/performance; CONFIG_KSU disabled only, plus dependent KSU settings",
+  "manager": "official KernelSU_Next_v1.0.9_12797-release.apk; exact release SHA256 and expected signing certificate matched",
+  "name": "Singularity v1 @ProjectNoci #1",
+  "baseline_device_boot": "User confirmed R5 can boot; KSUN vs NoRoot variant was not specified",
+  "root_runtime": "Not verified",
+  "cpu_oc": "Not implemented: CPU OSM firmware LUT remains authoritative",
+  "gpu_oc": {
+    "status": "removed",
+    "policy": "Keep original ROM-selected speed-bin power levels and original clock-provider table",
+    "actual_clock_and_stability": "unmeasured"
+  },
+  "firmware_tables": "CPU/L3 OSM LUT untouched; DTB/DTBO/ramdisk preserved",
+  "compiler_notes": "Same pinned Snapdragon compiler as R5",
+  "performance_source_sha256": {
+    "kernel/sched/cpufreq_schedutil.c": "627b8e07744a8ce36d67688fb17b9a0917a6bad70561f430b7ae6ecd111d7dbf",
+    "include/linux/singularity_dvfs.h": "0396af1b1cc3525e02c6df6ee40150cb0d5ca6588ba47dc7f17aff07d8a2802a",
+    "drivers/devfreq/governor_msm_adreno_tz.c": "cda333914cf63f18b490c452064250eff140a598a0f0ff9ce629b18b448e7613",
+    "drivers/gpu/msm/adreno.c": "589a617f9d7167fd49ea2140c1886453b7d85ae3e3dc09ea9f0f1db45ce54eed",
+    "drivers/clk/qcom/gpucc-sdmmagpie.c": "61a572a28d7e654d264da8c8812949f3a97cc5b0aa2e481fff711c0101a139fa",
+    "drivers/power/supply/qcom/smb5-lib.c": "18dde7a1f8a436e448368fbd82dc5d056e75bf5f5f5682a0766599d117fadace",
+    "drivers/power/supply/qcom/smb5-lib.h": "1c38929d9f817f0db40a74078e613ff32d9ac16bd9e29a984f88a03141f5430c",
+    "drivers/power/supply/qcom/qpnp-smb5.c": "911ec0d0009887c499e4c8a6df5c0f55e5d2a1ced9577ef560e8cb11afbfe6fe",
+    "drivers/misc/fastchg.c": "6d518bc1f50be003f0c49026aacb1b8dc0760fff81038c6cda198b47bc8d6c5d"
+  },
+  "build_path_note": "Use a short absolute checkout path (for example /workspace/surya); QCACLD includes can exceed shell argument limits in deeply nested paths.",
+  "compiler_binary_sha256": "55efb02233cb42350dac0d607e42f9e8d11375af516b647dce072f45fb0ed22a",
+  "compiler_archive_sha256": "98093335528f59d68be4c535292fbe5bd82ecdeb7758fbf1bc3c8e9b3af62195",
+  "branding_source_sha256": {
+    "scripts/mkcompile_h": "8042b1a410ce47421238bd23a562f33bf3758b891f49edb2dee1e39d8928805f"
+  },
+  "build_exit_code": 0,
+  "build_log": "build-final.log",
+  "final_release": "4.14.190-Singularity-v1-ProjectNoci",
+  "host_validation": {
+    "source_callbacks": "passed incl charger failures and original GPU bins",
+    "binary_config_root": "passed",
+    "compiled_policy": "passed",
+    "zip": "passed",
+    "repack_fixtures": [
+      {
+        "fixture": "current_rom_original",
+        "kernel_exact": true,
+        "ramdisk_cpio_byte_exact": true,
+        "ramdisk_compression_preserved": true,
+        "compressed_ramdisk_byte_exact": true,
+        "dtb_byte_exact": true,
+        "dtbo_unchanged_no_write": true,
+        "header_preserved": true,
+        "avb_hash_valid": true,
+        "vbmeta_header_preserved": true
+      },
+      {
+        "fixture": "bad_readback",
+        "rejected": true,
+        "dtbo_unchanged": true
+      }
+    ],
+    "device_UI_offcharge_stability": "not device-tested",
+    "vendor_module_ABI": "unknown without vendor modules"
+  },
+  "charging_fix": {
+    "observed": "User reports no charging while device is off",
+    "confirmed_source_defect": "DPDM errors ignored; APSD rerun flag set before write success; probe ignored provider deferral",
+    "changes": [
+      "Return DPDM and APSD register errors",
+      "Set rerun-done flag only after successful APSD write",
+      "Defer charger probe on -EPROBE_DEFER; retain nonfatal behavior for other startup retry errors",
+      "Default forced USB 500-to-900mA override to off; native QC/PD/AICL/thermal behavior retained"
+    ],
+    "causal_status": "Source error path reproduced in host test; link to physical off-charge symptom unconfirmed",
+    "device_result": "untested"
+  },
+  "final_image_sha256": "14dcd2030d057597dcc46f62ec561036bcf06f115a8e85dba70ba767c5a5690d",
+  "final_zip_sha256": "5be5a2e64429f0a6de0e9d1080d76424e1e0e08118e5b796270879b9ea1c4303"
+}

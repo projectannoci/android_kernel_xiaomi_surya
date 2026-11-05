@@ -1,0 +1,24 @@
+Singularity v1 @ProjectNoci #1 — surya final
+
+Use a short checkout path, e.g. /workspace/surya.
+Install make, gcc/g++, bc, flex, bison, libssl-dev, libelf-dev, zip,
+gcc-arm-linux-gnueabi, binutils-aarch64-linux-gnu and libtinfo5.
+Place the pinned Snapdragon-Clang commit from provenance.json in toolchain14.
+Build: JOBS=8 ./build.sh
+Output: dist/Singularity_v1_ProjectNoci_1_surya_Final_KSUN.zip
+
+Root: KernelSU Next1.0.9/API12797, manual hooks/native LSM, no kprobes.
+Manager: KernelSU_Next_v1.0.9_12797-release.apk.
+
+The failing #1 GPU OC has been removed; ROM-selected GPU bins are retained.
+CPU and AdrenoTZ response match R5. Charger startup handles DPDM deferral
+and APSD errors; the forced USB 900mA override defaults off.
+Native QC/PD, thermal and electrical protections are unchanged.
+
+Checks: python3 validation/run_checks.py
+Package: KERNEL_ZIP=/absolute/path.zip python3 validation/test_package.py
+Repack fixture: validation/test_kernelonly.py, with REFERENCE_BOOT,
+REFERENCE_DTBO, QEMU_ARM, HOST_LIB and PACKAGE_DIR set to test inputs.
+Tests emulate writes to regular files only, never real device partitions.
+
+Device UI/off-charge success is not established by host checks.

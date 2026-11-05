@@ -1,0 +1,15 @@
+{
+  "mode": "ksun",
+  "release": "4.14.190-Singularity-v1-ProjectNoci-r5-ksun",
+  "image_bytes": 37486608,
+  "image_sha256": "53027d9def35d485c3b3a84da205bf972912c3ae74f519aab2a1962e7f0b6d15",
+  "arm64_image": true,
+  "embedded_effective_config_exact": true,
+  "probe_backend_absent": true,
+  "manual_root_object_references": true,
+  "manual_root_linked": true,
+  "R4_performance_source_byte_identical": true,
+  "device_boot": "untested",
+  "FPS": "unmeasured",
+  "vendor_module_ABI": "unknown without vendor modules"
+}

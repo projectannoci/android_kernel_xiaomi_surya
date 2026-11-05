@@ -1,0 +1,7 @@
+{
+  "ZIP": "Singularity_v1_ProjectNoci_surya_OSS_A13plus_R5_KSUN_Manual.zip",
+  "bytes": 16561067,
+  "sha256": "a91c5440bc2bd80b3da8c18222d51d51c18ef4ee00d0cfd5cdbe0eb1df68a99f",
+  "CRC_manifest_permissions_paths": true,
+  "kernel_only_no_ROM_payloads": true
+}

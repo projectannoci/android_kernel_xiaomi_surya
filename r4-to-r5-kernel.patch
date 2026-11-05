@@ -1,0 +1,158 @@
+--- a/arch/arm64/configs/singularity_defconfig
++++ b/arch/arm64/configs/singularity_defconfig
+@@ -1,5 +1,5 @@
+ CONFIG_TOOLS_SUPPORT_RELR=y
+-CONFIG_LOCALVERSION="-Singularity-v1-ProjectNoci-r4"
++CONFIG_LOCALVERSION="-Singularity-v1-ProjectNoci-r5-ksun"
+ # CONFIG_FHANDLE is not set
+ CONFIG_NO_HZ=y
+ CONFIG_HIGH_RES_TIMERS=y
+@@ -742,8 +742,11 @@
+ 
+ # Singularity root and diagnostics; inherited vendor options remain unchanged.
+ CONFIG_LOCALVERSION_AUTO=n
+-CONFIG_KPROBES=y
+-CONFIG_KRETPROBES=y
++# CONFIG_KPROBES is not set
++# CONFIG_KRETPROBES is not set
+ CONFIG_KSU=y
+-CONFIG_KPM=n
+ CONFIG_RD_LZ4=y
++
++# KernelSU Next: native/manual entry points, no probe backend.
++# CONFIG_KSU_KPROBES_HOOK is not set
++CONFIG_KSU_LSM_SECURITY_HOOKS=y
+--- a/Makefile
++++ b/Makefile
+@@ -904,7 +904,7 @@
+ ifdef CONFIG_LTO_CLANG
+ ifdef CONFIG_THINLTO
+ lto-clang-flags	:= -flto=thin
+-LDFLAGS		+= --thinlto-cache-dir=.thinlto-cache --thinlto-jobs=2
++LDFLAGS		+= --thinlto-cache-dir=.thinlto-cache --thinlto-jobs=4
+ else
+ lto-clang-flags	:= -flto
+ endif
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1720,6 +1720,10 @@
+ /*
+  * sys_execve() executes a new program.
+  */
++#ifdef CONFIG_KSU
++extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
++                             void *argv, void *envp, int *flags);
++#endif
+ static int do_execveat_common(int fd, struct filename *filename,
+ 			      struct user_arg_ptr argv,
+ 			      struct user_arg_ptr envp,
+@@ -1733,6 +1737,10 @@
+ 
+ 	if (IS_ERR(filename))
+ 		return PTR_ERR(filename);
++
++#ifdef CONFIG_KSU
++	ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
++#endif
+ 
+ 	/*
+ 	 * We move the actual failure in case of RLIMIT_NPROC excess from
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -359,6 +359,10 @@
+  * We do this by temporarily clearing all FS-related capabilities and
+  * switching the fsuid/fsgid around to the real ones.
+  */
++#ifdef CONFIG_KSU
++extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
++                              int *mode, int *flags);
++#endif
+ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ {
+ 	const struct cred *old_cred;
+@@ -368,6 +372,9 @@
+ 	struct vfsmount *mnt;
+ 	int res;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW;
++#ifdef CONFIG_KSU
++	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
++#endif
+ 
+ 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
+ 		return -EINVAL;
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -429,9 +429,18 @@
+ }
+ EXPORT_SYMBOL(kernel_read);
+ 
++#ifdef CONFIG_KSU
++extern bool ksu_vfs_read_hook;
++extern int ksu_handle_vfs_read(struct file **file_ptr, char __user **buf_ptr,
++                              size_t *count_ptr, loff_t **pos);
++#endif
+ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
+ {
+ 	ssize_t ret;
++#ifdef CONFIG_KSU
++	if (unlikely(ksu_vfs_read_hook))
++		ksu_handle_vfs_read(&file, &buf, &count, &pos);
++#endif
+ 
+ 	if (!(file->f_mode & FMODE_READ))
+ 		return -EBADF;
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -163,12 +163,18 @@
+  *
+  * 0 will be returned on success, and a -ve error code if unsuccessful.
+  */
++#ifdef CONFIG_KSU
++extern int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags);
++#endif
+ int vfs_statx(int dfd, const char __user *filename, int flags,
+ 	      struct kstat *stat, u32 request_mask)
+ {
+ 	struct path path;
+ 	int error = -EINVAL;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
++#ifdef CONFIG_KSU
++	ksu_handle_stat(&dfd, &filename, &flags);
++#endif
+ 
+ 	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
+ 		       AT_EMPTY_PATH | KSTAT_QUERY_FLAGS)) != 0)
+--- a/fs/internal.h
++++ b/fs/internal.h
+@@ -68,6 +68,9 @@
+ extern int sb_prepare_remount_readonly(struct super_block *);
+ 
+ extern void __init mnt_init(void);
++#ifdef CONFIG_KSU
++int path_umount(struct path *path, int flags);
++#endif
+ 
+ extern int __mnt_want_write(struct vfsmount *);
+ extern int __mnt_want_write_file(struct file *);
+--- a/drivers/input/input.c
++++ b/drivers/input/input.c
+@@ -366,9 +366,19 @@
+ 	return disposition;
+ }
+ 
++#ifdef CONFIG_KSU
++extern bool ksu_input_hook;
++extern int ksu_handle_input_handle_event(unsigned int *type, unsigned int *code,
++                                       int *value);
++#endif
+ static void input_handle_event(struct input_dev *dev,
+ 			       unsigned int type, unsigned int code, int value)
+ {
++#ifdef CONFIG_KSU
++	if (unlikely(ksu_input_hook))
++		ksu_handle_input_handle_event(&type, &code, &value);
++#endif
++
+ 	int disposition = input_get_disposition(dev, type, code, &value);
+ 
+ 	if (disposition != INPUT_IGNORE_EVENT && type != EV_SYN)

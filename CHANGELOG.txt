@@ -1,0 +1,15 @@
+Singularity v1 @ProjectNoci #1
+surya | OSS vendor | Android 13+
+
+- Restore original GPU speed-bin frequencies; remove forced GPU OC.
+- Restore R5 CPU headroom and Adreno TZ 2ms sampling.
+- Retain WALT, schedutil 500us up / 20ms down and native policy limits.
+- Handle charger DPDM probe deferral and APSD write errors.
+- Mark APSD rerun complete only after the write succeeds.
+- Disable forced USB-current override by default.
+- Retain native QC/PD negotiation, AICL, JEITA and thermal protections.
+- KernelSU Next 1.0.9 / API12797 manual hooks.
+- Kernel-only installer; preserve ROM ramdisk, DTB, DTBO and metadata.
+
+Previous #1 boots but tester reported UI freeze/white screen.
+Corrected final phone UI and off-charge behavior require device testing.

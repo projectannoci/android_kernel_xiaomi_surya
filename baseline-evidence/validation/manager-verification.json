@@ -1,0 +1,9 @@
+{
+  "APK": "KernelSU_Next_v1.0.9_12797-release.apk",
+  "bytes": 18514093,
+  "sha256": "0013c41c9aeda2699f8a8af840839eb495f89bce7264b5c8fa42152b4c8d9a1e",
+  "matches_official_release_digest": true,
+  "v2_certificate_bytes": 998,
+  "v2_certificate_sha256": "79e590113c4c4c0c222978e413a5faa801666957b1212a328e46c00c69821bf7",
+  "matches_compiled_Manager_certificate_policy": true
+}

@@ -1,0 +1,12 @@
+{
+  "zip_crc": true,
+  "built_image_exact": true,
+  "arm64_image": true,
+  "manifest": true,
+  "installer_syntax": true,
+  "executable_modes": true,
+  "paths": true,
+  "kernel_only_no_ROM_blobs": true,
+  "zip_bytes": 16566881,
+  "zip_sha256": "5be5a2e64429f0a6de0e9d1080d76424e1e0e08118e5b796270879b9ea1c4303"
+}

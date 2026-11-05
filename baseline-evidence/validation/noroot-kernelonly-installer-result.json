@@ -1,0 +1,14 @@
+[
+  {
+    "fixture": "current_rom_original",
+    "kernel_exact": true,
+    "ramdisk_cpio_byte_exact": true,
+    "ramdisk_compression_preserved": true,
+    "compressed_ramdisk_byte_exact": true,
+    "dtb_byte_exact": true,
+    "dtbo_unchanged_no_write": true,
+    "header_preserved": true,
+    "avb_hash_valid": true,
+    "vbmeta_header_preserved": true
+  }
+]

@@ -1,0 +1,240 @@
+--- a/include/linux/singularity_dvfs.h
++++ b/include/linux/singularity_dvfs.h
+@@ -2,7 +2,7 @@
+ #ifndef _LINUX_SINGULARITY_DVFS_H
+ #define _LINUX_SINGULARITY_DVFS_H
+ 
+-#define SINGULARITY_GPU_SAMPLE_US 1000U
++#define SINGULARITY_GPU_SAMPLE_US 2000U
+ 
+ /* Capacity-relative demand headroom; zero demand stays zero. */
+ static inline unsigned long singularity_cpu_util(unsigned long util,
+@@ -14,9 +14,9 @@
+ 		return 0;
+ 	if (util > capacity)
+ 		util = capacity;
+-	if (util < (big ? capacity / 4 + capacity / 8 : capacity / 2))
++	if (util < (big ? capacity / 2 : capacity - capacity / 4))
+ 		return util;
+-	margin = big ? capacity / 4 : capacity / 8;
++	margin = big ? capacity / 8 : capacity / 16;
+ 	return util > capacity - margin ? capacity : util + margin;
+ }
+ 
+@@ -42,15 +42,15 @@
+ 	target = requested < 0 ? 0 : requested > last ? last : requested;
+ 	if (total < SINGULARITY_GPU_SAMPLE_US || busy > total)
+ 		return target;
+-	if (busy >= singularity_load_threshold(total, 85)) {
++	if (busy >= singularity_load_threshold(total, 90)) {
+ 		burst = level > 1 ? level - 2 : 0;
+ 		if (target > burst)
+ 			target = burst;
+-	} else if (busy >= singularity_load_threshold(total, 70)) {
++	} else if (busy >= singularity_load_threshold(total, 75)) {
+ 		burst = level ? level - 1 : 0;
+ 		if (target > burst)
+ 			target = burst;
+-	} else if (busy >= singularity_load_threshold(total, 55) &&
++	} else if (busy >= singularity_load_threshold(total, 60) &&
+ 			target > level) {
+ 		target = level;
+ 	}
+--- a/drivers/devfreq/governor_msm_adreno_tz.c
++++ b/drivers/devfreq/governor_msm_adreno_tz.c
+@@ -30,13 +30,14 @@
+ static DEFINE_SPINLOCK(sample_lock);
+ static DEFINE_SPINLOCK(suspend_lock);
+ /*
+- * Use a 1ms accounting window for active rendering.
++ * FLOOR is 5msec to capture up to 3 re-draws
++ * per frame for 60fps content.
+  */
+ #define FLOOR SINGULARITY_GPU_SAMPLE_US
+ /*
+- * Require 500us of GPU busy time before querying TZ.
++ * MIN_BUSY is 1 msec for the sample to be sent
+  */
+-#define MIN_BUSY		500
++#define MIN_BUSY		1000
+ #define MAX_TZ_VERSION		0
+ 
+ /*
+--- a/drivers/gpu/msm/adreno.c
++++ b/drivers/gpu/msm/adreno.c
+@@ -16,7 +16,6 @@
+ #include <linux/sched.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+-#include <linux/pm_opp.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+ #include <soc/qcom/scm.h>
+@@ -786,63 +785,6 @@
+ 	}
+ }
+ 
+-/* Run before GMU copies the KGSL table and builds RPMh/HFI votes. */
+-static void singularity_apply_gpu_oc(struct adreno_device *adreno_dev)
+-{
+-	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
+-	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
+-	struct clk *clk;
+-	struct dev_pm_opp *opp;
+-	unsigned long corner;
+-	unsigned int target;
+-
+-	if (!adreno_is_a618(adreno_dev) ||
+-		(!of_machine_is_compatible("qcom,sdmmagpie") &&
+-		 !of_machine_is_compatible("qcom,atoll") &&
+-		 !of_machine_is_compatible("xiaomi,surya")) ||
+-		pwr->num_pwrlevels < 3)
+-		return;
+-
+-	switch (pwr->pwrlevels[0].gpu_freq) {
+-	case 610000000:
+-		target = 650000000;
+-		break;
+-	case 700000000:
+-		target = 750000000;
+-		break;
+-	case 800000000:
+-	case 825000000:
+-		target = 900000000;
+-		break;
+-	default:
+-		return;
+-	}
+-
+-	clk = clk_get(&device->pdev->dev, "src_clk");
+-	if (IS_ERR(clk))
+-		clk = clk_get(&device->pdev->dev, "core_clk");
+-	if (IS_ERR(clk))
+-		return;
+-	if (clk_round_rate(clk, target) != target) {
+-		clk_put(clk);
+-		return;
+-	}
+-	clk_put(clk);
+-
+-	opp = dev_pm_opp_find_freq_exact(&device->pdev->dev, target, true);
+-	if (IS_ERR(opp))
+-		return;
+-	corner = dev_pm_opp_get_voltage(opp);
+-	dev_pm_opp_put(opp);
+-	if (!corner)
+-		return;
+-
+-	/* Preserve table size, lower OPPs, bus votes and initial/idle indices. */
+-	dev_info(&device->pdev->dev, "Singularity GPU OPP %u -> %u Hz\n",
+-		pwr->pwrlevels[0].gpu_freq, target);
+-	pwr->pwrlevels[0].gpu_freq = target;
+-}
+-
+ static int adreno_of_parse_pwrlevels(struct adreno_device *adreno_dev,
+ 		struct device_node *node)
+ {
+@@ -899,7 +841,6 @@
+ 			level->bus_max = level->bus_freq;
+ 	}
+ 
+-	singularity_apply_gpu_oc(adreno_dev);
+ 	return 0;
+ }
+ 
+--- a/drivers/clk/qcom/gpucc-sdmmagpie.c
++++ b/drivers/clk/qcom/gpucc-sdmmagpie.c
+@@ -292,7 +292,6 @@
+ 	F(750000000, P_CRC_DIV, 1, 0, 0),
+ 	F(800000000, P_CRC_DIV, 1, 0, 0),
+ 	F(825000000, P_CRC_DIV, 1, 0, 0),
+-	F(900000000, P_CRC_DIV, 1, 0, 0),
+ 	{ }
+ };
+ 
+@@ -320,7 +319,7 @@
+ 			[VDD_GX_LOW_L1] = 565000000,
+ 			[VDD_GX_NOMINAL] = 650000000,
+ 			[VDD_GX_NOMINAL_L1] = 800000000,
+-			[VDD_GX_HIGH_L1] = 900000000},
++			[VDD_GX_HIGH_L1] = 825000000},
+ 	},
+ };
+ 
+--- a/drivers/power/supply/qcom/smb5-lib.c
++++ b/drivers/power/supply/qcom/smb5-lib.c
+@@ -1246,7 +1246,7 @@
+ 	return rc;
+ }
+ 
+-void smblib_rerun_apsd(struct smb_charger *chg)
++int smblib_rerun_apsd(struct smb_charger *chg)
+ {
+ 	int rc;
+ 
+@@ -1256,6 +1256,8 @@
+ 				APSD_RERUN_BIT, APSD_RERUN_BIT);
+ 	if (rc < 0)
+ 		smblib_err(chg, "Couldn't re-run APSD rc=%d\n", rc);
++
++	return rc;
+ }
+ 
+ static const struct apsd_result *smblib_update_usb_type(struct smb_charger *chg)
+@@ -1514,11 +1516,16 @@
+ 		return 0;
+ 
+ 	rc = smblib_request_dpdm(chg, true);
++	if (rc < 0) {
++		smblib_err(chg, "Couldn't to enable DPDM rc=%d\n", rc);
++		return rc;
++	}
++
++	rc = smblib_rerun_apsd(chg);
+ 	if (rc < 0)
+-		smblib_err(chg, "Couldn't to enable DPDM rc=%d\n", rc);
++		return rc;
+ 
+ 	chg->uusb_apsd_rerun_done = true;
+-	smblib_rerun_apsd(chg);
+ 
+ 	return 0;
+ }
+--- a/drivers/power/supply/qcom/smb5-lib.h
++++ b/drivers/power/supply/qcom/smb5-lib.h
+@@ -990,7 +990,7 @@
+ 				const union power_supply_propval *val);
+ void smblib_suspend_on_debug_battery(struct smb_charger *chg);
+ int smblib_rerun_apsd_if_required(struct smb_charger *chg);
+-void smblib_rerun_apsd(struct smb_charger *chg);
++int smblib_rerun_apsd(struct smb_charger *chg);
+ int smblib_get_prop_fcc_delta(struct smb_charger *chg,
+ 				union power_supply_propval *val);
+ int smblib_get_thermal_threshold(struct smb_charger *chg, u16 addr, int *val);
+--- a/drivers/power/supply/qcom/qpnp-smb5.c
++++ b/drivers/power/supply/qcom/qpnp-smb5.c
+@@ -3089,7 +3089,12 @@
+ 		schgm_flash_init(chg);
+ 	}
+ 
+-	smblib_rerun_apsd_if_required(chg);
++	/* Retry cold-boot detection after the DPDM provider is ready. */
++	rc = smblib_rerun_apsd_if_required(chg);
++	if (rc == -EPROBE_DEFER)
++		return rc;
++	if (rc < 0)
++		dev_warn(chg->dev, "Initial APSD retry failed rc=%d\n", rc);
+ 
+ 	/* Use ICL results from HW */
+ 	rc = smblib_icl_override(chg, HW_AUTO_MODE);
+--- a/drivers/misc/fastchg.c
++++ b/drivers/misc/fastchg.c
+@@ -27,7 +27,7 @@
+ #include <linux/string.h>
+ #include <linux/module.h>
+ 
+-int force_fast_charge = 1;
++int force_fast_charge = 0;
+ 
+ static int __init get_fastcharge_opt(char *ffc)
+ {
